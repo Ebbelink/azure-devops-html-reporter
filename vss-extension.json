@@ -1,0 +1,82 @@
+{
+  "manifestVersion": 1,
+  "id": "azure-pipelines-html-integration",
+  "publisher": "StarttoScaleIT",
+  "version": "0.0.1",
+  "author": "Niels Ebbelink",
+  "name": "Html Integration",
+  "description": "Embed HTML report in Azure Pipelines",
+  "public": false,
+  "categories": [
+    "Azure Pipelines"
+  ],
+  "icons": {
+    "default": "logo.png"
+  },
+  "tags": [
+    "Preview"
+  ],
+  "targets": [
+    {
+      "id": "Microsoft.VisualStudio.Services"
+    }
+  ],
+  "repository": {
+    "type": "git",
+    "uri": "https://github.com/Ebbelink/azure-devops-html-integration"
+  },
+  "content": {
+    "details": {
+      "path": "README.md"
+    },
+    "license": {
+      "path": "LICENSE"
+    }
+  },
+  "scopes": [
+    "vso.build_execute"
+  ],
+  "demands": [
+    "api-version/3.0"
+  ],
+  "contributions": [
+    {
+      "id": "html-report-build-tab",
+      "type": "ms.vss-build-web.build-results-tab",
+      "description": "Add a HTML tab to a build",
+      "targets": [
+        "ms.vss-build-web.build-results-view"
+      ],
+      "properties": {
+        "name": "HTML Viewer",
+        "uri": "dist/htmlReporter.html"
+      },
+      "includes": [
+        "ms.vss-releaseManagement-web.release-service-data-external"
+      ]
+    },
+    {
+      "id": "PublishHtmlReport",
+      "type": "ms.vss-distributed-task.task",
+      "targets": [
+        "ms.vss-distributed-task.tasks"
+      ],
+      "properties": {
+        "name": "PublishHtmlReport",
+        "displayName": "Publish HTML Report"
+      }
+    }
+  ],
+  "files": [
+    {
+      "path": "./PublishHtmlReport",
+      "packagePath": "PublishHtmlReport",
+      "addressable": false
+    },
+    {
+      "path": "./dist",
+      "packagePath": "dist",
+      "addressable": true
+    }
+  ]
+}
