@@ -1,4 +1,6 @@
-import "./tabContent.scss"
+import "./htmlReporter.scss"
+
+import { Buffer } from "buffer";
 
 import * as React from "react"
 import * as ReactDOM from "react-dom"
@@ -22,9 +24,9 @@ SDK.ready().then(() => {
       let buildAttachmentClient = new BuildAttachmentClient(build)
       buildAttachmentClient.init().then(() => {
         displayReports(buildAttachmentClient)
-      }).catch(error => {throw new Error(error)})
+      }).catch(error => { throw new Error(error) })
     })
-  } catch(error) {
+  } catch (error) {
     throw new Error(error)
   }
 })
@@ -37,14 +39,14 @@ abstract class AttachmentClient {
   protected attachments: Attachment[] = []
   protected authHeaders: Object = undefined
   protected reportHtmlContent: string = undefined
-  constructor() {}
+  constructor() { }
 
-  public getAttachments() : Attachment[] {
+  public getAttachments(): Attachment[] {
     return this.attachments
   }
 
   public getDownloadableAttachment(attachmentName: string): Attachment {
-    const attachment = this.attachments.find((attachment) => { return attachment.name === attachmentName})
+    const attachment = this.attachments.find((attachment) => { return attachment.name === attachmentName })
     if (!(attachment && attachment._links && attachment._links.self && attachment._links.self.href)) {
       throw new Error("Attachment " + attachmentName + " is not downloadable")
     }
@@ -56,7 +58,7 @@ abstract class AttachmentClient {
       console.log('Get access token')
       const accessToken = await SDK.getAccessToken()
       const b64encodedAuth = Buffer.from(':' + accessToken).toString('base64')
-      this.authHeaders = { headers: {'Authorization': 'Basic ' + b64encodedAuth} }
+      this.authHeaders = { headers: { 'Authorization': 'Basic ' + b64encodedAuth } }
     }
     console.log("Get " + attachmentName + " attachment content")
     const attachment = this.getDownloadableAttachment(attachmentName)
@@ -68,7 +70,7 @@ abstract class AttachmentClient {
     console.log(responseText)
     return responseText
   }
-  
+
 }
 
 class BuildAttachmentClient extends AttachmentClient {
@@ -123,27 +125,27 @@ export default class TaskAttachmentPanel extends React.Component<TaskAttachmentP
         // Conditionally add counter for multistage pipeline
         const name = metadata[2] !== '__default' ? `${metadata[2]} #${metadata[3]}` : metadata[0]
 
-        tabs.push(<Tab name={name} id={attachment.name} key={attachment.name} url={attachment._links.self.href}/>)
+        tabs.push(<Tab name={name} id={attachment.name} key={attachment.name} url={attachment._links.self.href} />)
         this.tabContents.add(attachment.name, this.tabInitialContent)
       }
       return (
         <div className="flex-column">
-          { attachments.length > 0 ?
+          {attachments.length > 0 ?
             <TabBar
               onSelectedTabChanged={this.onSelectedTabChanged}
               selectedTabId={this.selectedTabId}
               tabSize={TabSize.Tall}>
               {tabs}
             </TabBar>
-          : null }
-          <Observer selectedTabId={this.selectedTabId} tabContents={this.tabContents}>            
+            : null}
+          <Observer selectedTabId={this.selectedTabId} tabContents={this.tabContents}>
             {(props: { selectedTabId: string }) => {
-              if ( this.tabContents.get(props.selectedTabId) === this.tabInitialContent) {
+              if (this.tabContents.get(props.selectedTabId) === this.tabInitialContent) {
                 this.props.attachmentClient.getAttachmentContent(props.selectedTabId).then((content) => {
                   this.tabContents.set(props.selectedTabId, '<iframe class="wide flex-row flex-center" srcdoc="' + this.escapeHTML(content) + '"></iframe>')
-              })
-            }
-              return  <span dangerouslySetInnerHTML={ {__html: this.tabContents.get(props.selectedTabId)} } />
+                })
+              }
+              return <span dangerouslySetInnerHTML={{ __html: this.tabContents.get(props.selectedTabId) }} />
             }}
           </Observer>
         </div>
@@ -155,6 +157,3 @@ export default class TaskAttachmentPanel extends React.Component<TaskAttachmentP
     this.selectedTabId.value = newTabId;
   }
 }
-
-
-

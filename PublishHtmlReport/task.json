@@ -13,7 +13,7 @@
   "version": {
     "Major": "1",
     "Minor": "0",
-    "Patch": "8"
+    "Patch": "9"
   },
   "minimumAgentVersion": "1.95.0",
   "instanceNameFormat": "Publish Html Report",
@@ -21,10 +21,10 @@
     {
       "name": "tabName",
       "type": "string",
-      "label": "Report tab name",
+      "label": "Tab name",
       "defaultValue": "HTML-Report",
       "required": false,
-      "helpMarkDown": "Name of the tab displayed in the report"
+      "helpMarkDown": "Name of the displayed tab"
     },
     {
       "name": "reportDir",
