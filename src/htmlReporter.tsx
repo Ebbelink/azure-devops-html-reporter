@@ -17,60 +17,75 @@ import { Tab, TabBar, TabSize } from "azure-devops-ui/Tabs"
 const ATTACHMENT_TYPE = "report-html";
 
 SDK.init()
-SDK.ready().then(() => {
-  try {
-    const config = SDK.getConfiguration()
-    config.onBuildChanged((build: Build) => {
-      let buildAttachmentClient = new BuildAttachmentClient(build)
-      buildAttachmentClient.init().then(() => {
-        displayReports(buildAttachmentClient)
-      }).catch(error => { throw new Error(error) })
-    })
-  } catch (error) {
-    throw new Error(error)
-  }
-})
+SDK.ready()
+  .then(() => {
+    try {
+      const config = SDK.getConfiguration();
+
+      config.onBuildChanged((build: Build) => {
+        let buildAttachmentClient = new BuildAttachmentClient(build);
+
+        buildAttachmentClient.init()
+          .then(() => {
+            displayReports(buildAttachmentClient);
+          }).catch(error => {
+            throw new Error(error)
+          });
+      })
+    } catch (error) {
+      throw new Error(error);
+    }
+  });
 
 function displayReports(attachmentClient: AttachmentClient) {
   ReactDOM.render(<TaskAttachmentPanel attachmentClient={attachmentClient} />, document.getElementById("html-report-container"))
 }
 
+class AttachmentWithContent implements Attachment {
+  _links: any;
+  name: string;
+  content: string;
+
+  public async DownloadContent(client: AttachmentClient) {
+    this.content = await client.getAttachmentContent(this.name);
+  }
+}
+
 abstract class AttachmentClient {
-  protected attachments: Attachment[] = []
-  protected authHeaders: Object = undefined
-  protected reportHtmlContent: string = undefined
+  protected attachments: AttachmentWithContent[] = [];
+  protected authHeaders: Object = undefined;
+  protected reportHtmlContent: string = undefined;
   constructor() { }
 
-  public getAttachments(): Attachment[] {
-    return this.attachments
+  public getAttachments(): AttachmentWithContent[] {
+    return this.attachments;
   }
 
-  public getDownloadableAttachment(attachmentName: string): Attachment {
-    const attachment = this.attachments.find((attachment) => { return attachment.name === attachmentName })
+  public getDownloadableAttachment(attachmentName: string): AttachmentWithContent {
+    const attachment = this.attachments.find((attachment) => { return attachment.name === attachmentName });
     if (!(attachment && attachment._links && attachment._links.self && attachment._links.self.href)) {
-      throw new Error("Attachment " + attachmentName + " is not downloadable")
+      throw new Error("Attachment " + attachmentName + " is not downloadable");
     }
-    return attachment
+    return attachment;
   }
 
   public async getAttachmentContent(attachmentName: string): Promise<string> {
     if (this.authHeaders === undefined) {
-      console.log('Get access token')
-      const accessToken = await SDK.getAccessToken()
-      const b64encodedAuth = Buffer.from(':' + accessToken).toString('base64')
-      this.authHeaders = { headers: { 'Authorization': 'Basic ' + b64encodedAuth } }
+      console.log('Get access token');
+      const accessToken = await SDK.getAccessToken();
+      const base64encodedAuth = Buffer.from(':' + accessToken).toString('base64');
+      this.authHeaders = { headers: { 'Authorization': 'Basic ' + base64encodedAuth } };
     }
-    console.log("Get " + attachmentName + " attachment content")
-    const attachment = this.getDownloadableAttachment(attachmentName)
-    const response = await fetch(attachment._links.self.href, this.authHeaders)
+    console.log("Get " + attachmentName + " attachment content");
+    const attachment = this.getDownloadableAttachment(attachmentName);
+    const response = await fetch(attachment._links.self.href, this.authHeaders);
     if (!response.ok) {
-      throw new Error(response.statusText)
+      throw new Error(response.statusText);
     }
-    const responseText = await response.text()
-    console.log(responseText)
-    return responseText
+    const responseText = await response.text();
+    console.log(responseText);
+    return responseText;
   }
-
 }
 
 class BuildAttachmentClient extends AttachmentClient {
@@ -82,9 +97,11 @@ class BuildAttachmentClient extends AttachmentClient {
   }
 
   public async init() {
-    const buildClient: BuildRestClient = getClient(BuildRestClient)
-    this.attachments = await buildClient.getAttachments(this.build.project.id, this.build.id, ATTACHMENT_TYPE)
-    console.log(this.attachments)
+    const buildClient: BuildRestClient = getClient(BuildRestClient);
+    this.attachments = await buildClient.getAttachments(this.build.project.id, this.build.id, ATTACHMENT_TYPE) as AttachmentWithContent[];
+    console.log("attachments: ", this.attachments);
+
+    this.attachments.forEach(attachment => { attachment.DownloadContent(this) });
   }
 }
 
@@ -125,6 +142,8 @@ export default class TaskAttachmentPanel extends React.Component<TaskAttachmentP
         // Conditionally add counter for multistage pipeline
         const name = metadata[2] !== '__default' ? `${metadata[2]} #${metadata[3]}` : metadata[0]
 
+        // TODO: Change the url to the artifact entrypoint
+        // TODO: download attachment here to use the contents of the config here.
         tabs.push(<Tab name={name} id={attachment.name} key={attachment.name} url={attachment._links.self.href} />)
         this.tabContents.add(attachment.name, this.tabInitialContent)
       }

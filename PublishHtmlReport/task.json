@@ -13,16 +13,16 @@
   "version": {
     "Major": "1",
     "Minor": "0",
-    "Patch": "9"
+    "Patch": "29"
   },
-  "minimumAgentVersion": "1.95.0",
+  "minimumAgentVersion": "2.104.1",
   "instanceNameFormat": "Publish Html Report",
   "inputs": [
     {
       "name": "tabName",
       "type": "string",
       "label": "Tab name",
-      "defaultValue": "HTML-Report",
+      "defaultValue": "HTML Report",
       "required": false,
       "helpMarkDown": "Name of the displayed tab"
     },
@@ -33,12 +33,27 @@
       "defaultValue": "",
       "required": true,
       "helpMarkDown": "HTML file directory where PublishHtmlReport is run."
+    },
+    {
+      "name": "artifactName",
+      "type": "string",
+      "label": "HTML artifact name",
+      "defaultValue": "",
+      "required": true,
+      "helpMarkDown": "Name of the artifact that contains the HTML report."
+    },
+    {
+      "name": "htmlEntrypoint",
+      "type": "string",
+      "label": "Location of HTML entrypoint in artifact",
+      "defaultValue": "",
+      "required": true,
+      "helpMarkDown": "The relative path to the file in the artifact to render the HTML off."
     }
   ],
   "execution": {
-    "Node10": {
-      "target": "index.js",
-      "argumentFormat": ""
+    "Node": {
+      "target": "index.js"
     }
   }
 }
