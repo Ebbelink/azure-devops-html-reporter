@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "target": "ES6",
+    "outDir": ".",
+    "jsx": "react",
+    "types": [
+        "react",
+        "node"
+    ],
+    "skipLibCheck": true,
+  },
+  "files": [
+      "index.ts"
+  ]
+}

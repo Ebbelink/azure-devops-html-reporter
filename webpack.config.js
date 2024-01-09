@@ -12,6 +12,9 @@ module.exports = {
     alias: {
       "azure-devops-extension-sdk": path.resolve("node_modules/azure-devops-extension-sdk")
     },
+    fallback: {
+      "fs": false
+    },
   },
   stats: {
     warnings: false

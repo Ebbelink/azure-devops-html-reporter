@@ -1,18 +1,21 @@
-import "./htmlReporter.scss"
+import "./htmlReporter.scss";
 
 import { Buffer } from "buffer";
 
-import * as React from "react"
-import * as ReactDOM from "react-dom"
-import * as SDK from "azure-devops-extension-sdk"
+import * as React from "react";
+import * as ReactDOM from "react-dom";
+import * as SDK from "azure-devops-extension-sdk";
 
-import { getClient } from "azure-devops-extension-api"
-import { Build, BuildRestClient, Attachment } from "azure-devops-extension-api/Build"
+import { getClient } from "azure-devops-extension-api";
+import { Build, BuildRestClient, Attachment, BuildArtifact, ArtifactResource } from "azure-devops-extension-api/Build";
 
-import { ObservableValue, ObservableObject } from "azure-devops-ui/Core/Observable"
-import { Observer } from "azure-devops-ui/Observer"
-import { Tab, TabBar, TabSize } from "azure-devops-ui/Tabs"
+import { ObservableValue, ObservableObject } from "azure-devops-ui/Core/Observable";
+import { Observer } from "azure-devops-ui/Observer";
+import { Tab, TabBar, TabSize } from "azure-devops-ui/Tabs";
 
+import * as JSZip from 'jszip';
+
+import { RunConfig } from "../PublishHtmlReport/runConfig";
 
 const ATTACHMENT_TYPE = "report-html";
 
@@ -20,8 +23,7 @@ SDK.init()
 SDK.ready()
   .then(() => {
     try {
-      const config = SDK.getConfiguration();
-
+      let config = SDK.getConfiguration();
       config.onBuildChanged((build: Build) => {
         let buildAttachmentClient = new BuildAttachmentClient(build);
 
@@ -29,11 +31,11 @@ SDK.ready()
           .then(() => {
             displayReports(buildAttachmentClient);
           }).catch(error => {
-            throw new Error(error)
+            throw error;
           });
       })
     } catch (error) {
-      throw new Error(error);
+      throw error;
     }
   });
 
@@ -46,13 +48,70 @@ class AttachmentWithContent implements Attachment {
   name: string;
   content: string;
 
-  public async DownloadContent(client: AttachmentClient) {
+  constructor(attachment: Attachment) {
+    this._links = attachment._links;
+    this.name = attachment.name;
+  }
+
+  public async download(client: AttachmentClient) {
     this.content = await client.getAttachmentContent(this.name);
+  }
+}
+
+class BuildArtifactContentReadable implements BuildArtifact {
+  id: number;
+  name: string;
+  resource: ArtifactResource;
+  source: string;
+  private zipBuffer: ArrayBuffer | undefined = undefined;
+
+  private authHeaders: Object = undefined;
+
+  constructor(artifact: BuildArtifact) {
+    this.id = artifact.id;
+    this.name = artifact.name;
+    this.resource = artifact.resource;
+    this.source = artifact.source;
+  }
+
+  public async getFileContentsFromZip(fileLocation: string) {
+    let result = (await JSZip.loadAsync(this.download(this.resource.downloadUrl)));
+    console.log(result);
+
+    let fileResult = result.file(fileLocation);
+    console.log(fileResult);
+
+    let fileContents = await fileResult.async("string");
+    console.log(fileContents);
+
+    return fileContents;
+  }
+
+  private async download(url: string) {
+    if (this.zipBuffer !== undefined) {
+      return this.zipBuffer;
+    }
+
+    if (this.authHeaders === undefined) {
+      console.log('Retrieve access token');
+      let accessToken = await SDK.getAccessToken();
+      let base64encodedAuth = Buffer.from(':' + accessToken).toString('base64');
+      this.authHeaders = { headers: { 'Authorization': 'Basic ' + base64encodedAuth } };
+    }
+
+    let response = await fetch(url, this.authHeaders);
+    if (!response.ok) {
+      throw new Error(response.statusText);
+    }
+    let responseBuffer = await response.arrayBuffer();
+
+    this.zipBuffer = responseBuffer;
   }
 }
 
 abstract class AttachmentClient {
   protected attachments: AttachmentWithContent[] = [];
+  protected artifacts: BuildArtifactContentReadable[] = [];
   protected authHeaders: Object = undefined;
   protected reportHtmlContent: string = undefined;
   constructor() { }
@@ -61,8 +120,12 @@ abstract class AttachmentClient {
     return this.attachments;
   }
 
+  public getArtifacts(): BuildArtifactContentReadable[] {
+    return this.artifacts;
+  }
+
   public getDownloadableAttachment(attachmentName: string): AttachmentWithContent {
-    const attachment = this.attachments.find((attachment) => { return attachment.name === attachmentName });
+    let attachment = this.attachments.find((attachment) => { return attachment.name === attachmentName });
     if (!(attachment && attachment._links && attachment._links.self && attachment._links.self.href)) {
       throw new Error("Attachment " + attachmentName + " is not downloadable");
     }
@@ -71,21 +134,34 @@ abstract class AttachmentClient {
 
   public async getAttachmentContent(attachmentName: string): Promise<string> {
     if (this.authHeaders === undefined) {
-      console.log('Get access token');
-      const accessToken = await SDK.getAccessToken();
-      const base64encodedAuth = Buffer.from(':' + accessToken).toString('base64');
+      console.log('Retrieve access token');
+      let accessToken = await SDK.getAccessToken();
+      let base64encodedAuth = Buffer.from(':' + accessToken).toString('base64');
       this.authHeaders = { headers: { 'Authorization': 'Basic ' + base64encodedAuth } };
     }
-    console.log("Get " + attachmentName + " attachment content");
-    const attachment = this.getDownloadableAttachment(attachmentName);
-    const response = await fetch(attachment._links.self.href, this.authHeaders);
+    console.log("Get attachment: ", attachmentName);
+    let attachment = this.getDownloadableAttachment(attachmentName);
+    let response = await fetch(attachment._links.self.href, this.authHeaders);
     if (!response.ok) {
       throw new Error(response.statusText);
     }
-    const responseText = await response.text();
-    console.log(responseText);
+    let responseText = await response.text();
     return responseText;
   }
+
+  public getArtifactContent(artifactName: string): BuildArtifactContentReadable {
+    return this.artifacts.find(art => art.name === artifactName);
+  }
+
+  // await Promise.all(this.artifacts.map(async artifactMetadata => {
+  //   let zipBuffer: ArrayBuffer = await this.download(artifactMetadata.resource.downloadUrl);
+  //   let result = (await JSZip.loadAsync(zipBuffer));
+  //   console.log(result);
+  //   let fileResult = result.file(`${artifactMetadata.name}/something-else.html`);
+  //   console.log(fileResult);
+  //   let fileContents = await fileResult.async("string");
+  //   console.log(fileContents);
+  // }));
 }
 
 class BuildAttachmentClient extends AttachmentClient {
@@ -97,14 +173,18 @@ class BuildAttachmentClient extends AttachmentClient {
   }
 
   public async init() {
-    const buildClient: BuildRestClient = getClient(BuildRestClient);
-    this.attachments = await buildClient.getAttachments(this.build.project.id, this.build.id, ATTACHMENT_TYPE) as AttachmentWithContent[];
-    console.log("attachments: ", this.attachments);
+    let buildClient: BuildRestClient = getClient(BuildRestClient);
+    let attachmentsMetadata = await buildClient.getAttachments(this.build.project.id, this.build.id, ATTACHMENT_TYPE);
+    this.attachments = attachmentsMetadata.map(att => new AttachmentWithContent(att));
 
-    this.attachments.forEach(attachment => { attachment.DownloadContent(this) });
+    await Promise.all(this.attachments.map(async attachment => await attachment.download(this)));
+    console.log("attachments:", this.attachments);
+
+    let artifactsMetadata = await buildClient.getArtifacts(this.build.project.id, this.build.id);
+    this.artifacts = await Promise.all(artifactsMetadata.map(art => new BuildArtifactContentReadable(art)));
+    console.log("artifacts metadata:", this.artifacts);
   }
 }
-
 
 interface TaskAttachmentPanelProps {
   attachmentClient: AttachmentClient
@@ -132,19 +212,17 @@ export default class TaskAttachmentPanel extends React.Component<TaskAttachmentP
   }
 
   public render() {
-    const attachments = this.props.attachmentClient.getAttachments()
+    let attachments = this.props.attachmentClient.getAttachments()
     if (attachments.length == 0) {
       return (null)
     } else {
-      const tabs = []
-      for (const attachment of attachments) {
-        const metadata = attachment.name.split('.')
-        // Conditionally add counter for multistage pipeline
-        const name = metadata[2] !== '__default' ? `${metadata[2]} #${metadata[3]}` : metadata[0]
+      let tabs = []
+      for (let attachment of attachments) {
+        let taskConfig: RunConfig = JSON.parse(attachment.content);
 
-        // TODO: Change the url to the artifact entrypoint
-        // TODO: download attachment here to use the contents of the config here.
-        tabs.push(<Tab name={name} id={attachment.name} key={attachment.name} url={attachment._links.self.href} />)
+        this.props.attachmentClient.getArtifacts();
+
+        tabs.push(<Tab name={taskConfig.TabName} id={attachment.name} key={attachment.name} url={taskConfig.ArtifactName} />)
         this.tabContents.add(attachment.name, this.tabInitialContent)
       }
       return (
@@ -158,11 +236,10 @@ export default class TaskAttachmentPanel extends React.Component<TaskAttachmentP
             </TabBar>
             : null}
           <Observer selectedTabId={this.selectedTabId} tabContents={this.tabContents}>
-            {(props: { selectedTabId: string }) => {
+            {async (props: { selectedTabId: string }) => {
               if (this.tabContents.get(props.selectedTabId) === this.tabInitialContent) {
-                this.props.attachmentClient.getAttachmentContent(props.selectedTabId).then((content) => {
-                  this.tabContents.set(props.selectedTabId, '<iframe class="wide flex-row flex-center" srcdoc="' + this.escapeHTML(content) + '"></iframe>')
-                })
+                let artifact = this.props.attachmentClient.getArtifactContent(props.selectedTabId);
+                this.tabContents.set(props.selectedTabId, '<iframe class="wide flex-row flex-center" srcdoc="' + this.escapeHTML(await artifact.getFileContentsFromZip("html-artifact/something-else.html")) + '"></iframe>');
               }
               return <span dangerouslySetInnerHTML={{ __html: this.tabContents.get(props.selectedTabId) }} />
             }}
