@@ -152,16 +152,6 @@ abstract class AttachmentClient {
   public getArtifactContent(artifactName: string): BuildArtifactContentReadable {
     return this.artifacts.find(art => art.name === artifactName);
   }
-
-  // await Promise.all(this.artifacts.map(async artifactMetadata => {
-  //   let zipBuffer: ArrayBuffer = await this.download(artifactMetadata.resource.downloadUrl);
-  //   let result = (await JSZip.loadAsync(zipBuffer));
-  //   console.log(result);
-  //   let fileResult = result.file(`${artifactMetadata.name}/something-else.html`);
-  //   console.log(fileResult);
-  //   let fileContents = await fileResult.async("string");
-  //   console.log(fileContents);
-  // }));
 }
 
 class BuildAttachmentClient extends AttachmentClient {
@@ -217,14 +207,31 @@ export default class TaskAttachmentPanel extends React.Component<TaskAttachmentP
       return (null)
     } else {
       let tabs = []
-      for (let attachment of attachments) {
+      console.log("All attachments:", attachments);
+      for (let index = 0; index < attachments.length; index++) {
+        const attachment = attachments[index];
+
         let taskConfig: RunConfig = JSON.parse(attachment.content);
+        console.log("Adding tab:", taskConfig.TabName);
+        console.log("Adding tab for artifact:", taskConfig.ArtifactName);
 
-        this.props.attachmentClient.getArtifacts();
+        let artifacts = this.props.attachmentClient.getArtifacts();
+        artifacts[0].name;
 
-        tabs.push(<Tab name={taskConfig.TabName} id={attachment.name} key={attachment.name} url={taskConfig.ArtifactName} />)
-        this.tabContents.add(attachment.name, this.tabInitialContent)
+        tabs.push(<Tab name={taskConfig.TabName} id={taskConfig.ArtifactName} key={taskConfig.ArtifactName} url={taskConfig.ArtifactName} />)
+        this.tabContents.add(taskConfig.ArtifactName, this.tabInitialContent)
       }
+      // for (let attachment of attachments) {
+      //   let taskConfig: RunConfig = JSON.parse(attachment.content);
+      //   console.log("Adding tab:", taskConfig.TabName);
+      //   console.log("Adding tab for artifact:", taskConfig.ArtifactName);
+
+      //   let artifacts = this.props.attachmentClient.getArtifacts();
+      //   artifacts[0].name;
+
+      //   tabs.push(<Tab name={taskConfig.TabName} id={taskConfig.ArtifactName} key={taskConfig.ArtifactName} url={taskConfig.ArtifactName} />)
+      //   this.tabContents.add(taskConfig.ArtifactName, this.tabInitialContent)
+      // }
       return (
         <div className="flex-column">
           {attachments.length > 0 ?
@@ -235,15 +242,15 @@ export default class TaskAttachmentPanel extends React.Component<TaskAttachmentP
               {tabs}
             </TabBar>
             : null}
-          <Observer selectedTabId={this.selectedTabId} tabContents={this.tabContents}>
+          {/* <Observer selectedTabId={this.selectedTabId} tabContents={this.tabContents}>
             {async (props: { selectedTabId: string }) => {
               if (this.tabContents.get(props.selectedTabId) === this.tabInitialContent) {
-                let artifact = this.props.attachmentClient.getArtifactContent(props.selectedTabId);
-                this.tabContents.set(props.selectedTabId, '<iframe class="wide flex-row flex-center" srcdoc="' + this.escapeHTML(await artifact.getFileContentsFromZip("html-artifact/something-else.html")) + '"></iframe>');
+                // let artifact = this.props.attachmentClient.getArtifactContent(props.selectedTabId);
+                // this.tabContents.set(props.selectedTabId, '<iframe class="wide flex-row flex-center" srcdoc="' + this.escapeHTML(await artifact.getFileContentsFromZip("html-artifact/something-else.html")) + '"></iframe>');
               }
               return <span dangerouslySetInnerHTML={{ __html: this.tabContents.get(props.selectedTabId) }} />
             }}
-          </Observer>
+          </Observer> */}
         </div>
       );
     }

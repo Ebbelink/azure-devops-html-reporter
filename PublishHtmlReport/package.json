@@ -11,9 +11,9 @@
     "fs": "0.0.2",
     "fs-extra": "^8.1.0",
     "globby": "^11.0.0",
-    "hat": "0.0.3"
+    "hat": "0.0.3",
+    "uuid": "^9.0.1"
   },
-  "devDependencies": {},
   "scripts": {},
   "author": "",
   "license": "ISC"

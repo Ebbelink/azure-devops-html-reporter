@@ -2,6 +2,8 @@ import * as tl from 'azure-pipelines-task-lib/task';
 import { writeFileSync } from 'fs';
 import { resolve } from "path";
 import { RunConfig } from "./runConfig";
+import {v4 as uuidv4} from 'uuid';
+
 
 async function run() {
   try {
@@ -13,11 +15,14 @@ async function run() {
 
     console.log("input: ", input);
 
-    let fileName = "task-parameters-config-file.json";
-    let filePath = resolve(fileName);
-    console.log(filePath);
-    writeFileSync(filePath, JSON.stringify(input))
-    tl.addAttachment('report-html', `${input.TabName}.${input.ArtifactName}.${input.HtmlEntrypoint}`, filePath)
+    let uuid = uuidv4();
+
+    let filePath = resolve(`${uuid}.json`);
+
+    let jsonConfig = JSON.stringify(input);
+
+    writeFileSync(filePath, jsonConfig);
+    tl.addAttachment("report-html", `${input.TabName}.${input.ArtifactName}.${input.HtmlEntrypoint}`, filePath);
   }
   catch (err) {
     tl.setResult(tl.TaskResult.Failed, err.message);

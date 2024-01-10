@@ -13,16 +13,17 @@ const tl = require("azure-pipelines-task-lib/task");
 const fs_1 = require("fs");
 const path_1 = require("path");
 const runConfig_1 = require("./runConfig");
+const uuid_1 = require("uuid");
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             let input = new runConfig_1.RunConfig(tl.getInput("tabName", true), tl.getInput("reportDir", true), tl.getInput("artifactName", true), tl.getInput("htmlEntrypoint", true));
             console.log("input: ", input);
-            let fileName = "task-parameters-config-file.json";
-            let filePath = (0, path_1.resolve)(fileName);
-            console.log(filePath);
-            (0, fs_1.writeFileSync)(filePath, JSON.stringify(input));
-            tl.addAttachment('report-html', `${input.TabName}.${input.ArtifactName}.${input.HtmlEntrypoint}`, filePath);
+            let uuid = (0, uuid_1.v4)();
+            let filePath = (0, path_1.resolve)(`${uuid}.json`);
+            let jsonConfig = JSON.stringify(input);
+            (0, fs_1.writeFileSync)(filePath, jsonConfig);
+            tl.addAttachment("report-html", `${input.TabName}.${input.ArtifactName}.${input.HtmlEntrypoint}`, filePath);
         }
         catch (err) {
             tl.setResult(tl.TaskResult.Failed, err.message);
