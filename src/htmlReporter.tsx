@@ -10,7 +10,7 @@ import { getClient } from "azure-devops-extension-api";
 import { Build, BuildRestClient, Attachment, BuildArtifact, ArtifactResource } from "azure-devops-extension-api/Build";
 
 import { ObservableValue, ObservableObject } from "azure-devops-ui/Core/Observable";
-import { Observer } from "azure-devops-ui/Observer";
+import { ObservedMembers, Observer } from "azure-devops-ui/Observer";
 import { Tab, TabBar, TabSize } from "azure-devops-ui/Tabs";
 
 import * as JSZip from 'jszip';
@@ -75,19 +75,18 @@ class BuildArtifactContentReadable implements BuildArtifact {
   }
 
   public async getFileContentsFromZip(fileLocation: string) {
-    let result = (await JSZip.loadAsync(this.download(this.resource.downloadUrl)));
+    let result: JSZip = (await JSZip.loadAsync(this.download(this.resource.downloadUrl)));
     console.log(result);
 
     let fileResult = result.file(fileLocation);
     console.log(fileResult);
 
     let fileContents = await fileResult.async("string");
-    console.log(fileContents);
 
     return fileContents;
   }
 
-  private async download(url: string) {
+  private async download(url: string): Promise<ArrayBuffer> {
     if (this.zipBuffer !== undefined) {
       return this.zipBuffer;
     }
@@ -103,9 +102,10 @@ class BuildArtifactContentReadable implements BuildArtifact {
     if (!response.ok) {
       throw new Error(response.statusText);
     }
-    let responseBuffer = await response.arrayBuffer();
+    let responseBuffer: ArrayBuffer = await response.arrayBuffer();
 
     this.zipBuffer = responseBuffer;
+    return this.zipBuffer;
   }
 }
 
@@ -183,7 +183,9 @@ interface TaskAttachmentPanelProps {
 export default class TaskAttachmentPanel extends React.Component<TaskAttachmentPanelProps> {
   private selectedTabId: ObservableValue<string>
   private tabContents: ObservableObject<string>
-  private tabInitialContent: string = '<div class="wide"><p>Loading...</p></div>'
+  private tabInitialContent: string = '<div class="wide"><p>Loading...</p></div>';
+  private tabNoContent: string = '<div class="wide"><p>No artifacts where found that could be matched</p></div>';
+  private tabToManyArtifactsContent: string = '<div class="wide"><p>To many artifacts match name inputted in pipeline task</p></div>';
 
   constructor(props: TaskAttachmentPanelProps) {
     super(props);
@@ -208,30 +210,24 @@ export default class TaskAttachmentPanel extends React.Component<TaskAttachmentP
     } else {
       let tabs = []
       console.log("All attachments:", attachments);
-      for (let index = 0; index < attachments.length; index++) {
-        const attachment = attachments[index];
-
+      for (let attachment of attachments) {
         let taskConfig: RunConfig = JSON.parse(attachment.content);
-        console.log("Adding tab:", taskConfig.TabName);
-        console.log("Adding tab for artifact:", taskConfig.ArtifactName);
+        console.log(`Adding tab: ${taskConfig.TabName} for artifact ${taskConfig.ArtifactName}`);
+        tabs.push(<Tab name={taskConfig.TabName} id={taskConfig.ArtifactName} key={taskConfig.ArtifactName} url={taskConfig.ArtifactName} />);
 
-        let artifacts = this.props.attachmentClient.getArtifacts();
-        artifacts[0].name;
-
-        tabs.push(<Tab name={taskConfig.TabName} id={taskConfig.ArtifactName} key={taskConfig.ArtifactName} url={taskConfig.ArtifactName} />)
-        this.tabContents.add(taskConfig.ArtifactName, this.tabInitialContent)
+        let artifacts = this.props.attachmentClient.getArtifacts().filter(art => art.name === taskConfig.ArtifactName);
+        if (artifacts.length < 1) {
+          this.tabContents.add(taskConfig.ArtifactName, this.tabNoContent);
+        } else if (artifacts.length > 1) {
+          this.tabContents.add(taskConfig.ArtifactName, this.tabToManyArtifactsContent);
+        } else {
+          artifacts[0].getFileContentsFromZip(`${taskConfig.ArtifactName}/${taskConfig.HtmlEntrypoint}`)
+            .then((fileContents: string) => {
+              this.tabContents.add(taskConfig.ArtifactName, fileContents);
+            });
+        }
       }
-      // for (let attachment of attachments) {
-      //   let taskConfig: RunConfig = JSON.parse(attachment.content);
-      //   console.log("Adding tab:", taskConfig.TabName);
-      //   console.log("Adding tab for artifact:", taskConfig.ArtifactName);
-
-      //   let artifacts = this.props.attachmentClient.getArtifacts();
-      //   artifacts[0].name;
-
-      //   tabs.push(<Tab name={taskConfig.TabName} id={taskConfig.ArtifactName} key={taskConfig.ArtifactName} url={taskConfig.ArtifactName} />)
-      //   this.tabContents.add(taskConfig.ArtifactName, this.tabInitialContent)
-      // }
+      console.log("tab contents:", this.tabContents);
       return (
         <div className="flex-column">
           {attachments.length > 0 ?
@@ -242,16 +238,14 @@ export default class TaskAttachmentPanel extends React.Component<TaskAttachmentP
               {tabs}
             </TabBar>
             : null}
-          {/* <Observer selectedTabId={this.selectedTabId} tabContents={this.tabContents}>
-            {async (props: { selectedTabId: string }) => {
-              if (this.tabContents.get(props.selectedTabId) === this.tabInitialContent) {
-                // let artifact = this.props.attachmentClient.getArtifactContent(props.selectedTabId);
-                // this.tabContents.set(props.selectedTabId, '<iframe class="wide flex-row flex-center" srcdoc="' + this.escapeHTML(await artifact.getFileContentsFromZip("html-artifact/something-else.html")) + '"></iframe>');
+          <Observer myObservableValue={this.selectedTabId} tabContents={this.tabContents}>
+            {
+              (props: { myObservableValue: string }) => {
+                return <span dangerouslySetInnerHTML={{ __html: this.tabContents.get(props.myObservableValue) }} />
               }
-              return <span dangerouslySetInnerHTML={{ __html: this.tabContents.get(props.selectedTabId) }} />
-            }}
-          </Observer> */}
-        </div>
+            }
+          </Observer>
+        </div >
       );
     }
   }

@@ -2,7 +2,7 @@
   "manifestVersion": 1,
   "id": "azure-pipelines-html-integration",
   "publisher": "StarttoScaleIT",
-  "version": "0.0.81",
+  "version": "0.0.129",
   "author": "Niels Ebbelink",
   "name": "Html Integration",
   "description": "Embed HTML report in Azure Pipelines",
