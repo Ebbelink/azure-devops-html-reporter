@@ -3,6 +3,16 @@
   "version": "0.0.1",
   "private": true,
   "author": "Niels Ebbelink",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "clean": "rimraf ./dist ./bin",
+    "precompile": "npm run clean",
+    "compile": "npx webpack && cd ./PublishHtmlReport/ && tsc",
+    "compile:dev": "npx webpack --mode=development",
+    "install-dependencies": "npm install && cd PublishHtmlReport && npm install && cd ..",
+    "package": "npm run compile && npx tfx-cli extension create --rev-version --json5 --output-path bin",
+    "publish": "npm run compile && npx tfx-cli extension publish --rev-version --json5 --manifest-globs vss-extension.json src/extensions/**/*.json --output-path bin --token %ADO_MARKETPLACE_PATH%"
+  },
   "dependencies": {
     "azure-devops-extension-api": "^1.157.0",
     "azure-devops-extension-sdk": "^2.0.11",
@@ -35,16 +45,6 @@
     "typescript": "^5.2.2",
     "webpack": "^5.89.0",
     "webpack-cli": "^5.1.4"
-  },
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "clean": "rimraf ./dist ./bin",
-    "precompile": "npm run clean",
-    "compile": "npx webpack && cd ./PublishHtmlReport/ && tsc",
-    "compile:dev": "npx webpack --mode=development",
-    "install-dependencies": "npm install && cd PublishHtmlReport && npm install && cd ..",
-    "package": "npm run compile && npx tfx-cli extension create --rev-version --json5 --output-path bin",
-    "publish": "npm run compile && npx tfx-cli extension publish --rev-version --json5 --manifest-globs vss-extension.json src/extensions/**/*.json --output-path bin --token %ADO_MARKETPLACE_PATH%"
   },
   "eslintConfig": {
     "extends": "react-app"

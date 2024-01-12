@@ -8,7 +8,7 @@ module.exports = {
   },
 
   resolve: {
-    extensions: [".ts", ".tsx", ".js"],
+    extensions: [".ts", ".tsx", ".js", ".scss"],
     alias: {
       "azure-devops-extension-sdk": path.resolve("node_modules/azure-devops-extension-sdk")
     },
@@ -27,7 +27,12 @@ module.exports = {
       },
       {
         test: /\.scss$/,
-        use: ["style-loader", "css-loader", "azure-devops-ui/buildScripts/css-variables-loader", "sass-loader"]
+        use: [
+          "style-loader",
+          "css-loader",
+          "azure-devops-ui/buildScripts/css-variables-loader",
+          "sass-loader"
+        ]
       },
       {
         test: /\.css$/,

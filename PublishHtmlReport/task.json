@@ -1,10 +1,10 @@
 {
-  "id": "bf52d8fd-c399-4acd-98c7-a03ceee2a974",
-  "name": "PublishHtmlReport",
-  "friendlyName": "Publish Html Report",
-  "description": "Publish Html Report",
-  "author": "",
-  "helpMarkDown": "Replace with markdown to show in help",
+  "id": "e7e37a92-e1fd-4235-af16-91f3c6551d39",
+  "name": "PublishHtmlArtifactReport",
+  "friendlyName": "Publish Html artifact Report",
+  "description": "View Html Reports from artifacts",
+  "author": "Mr Ebbelink",
+  "helpMarkDown": "View Html Reports from artifacts",
   "category": "Utility",
   "visibility": [
     "Build"
@@ -12,8 +12,8 @@
   "demands": [],
   "version": {
     "Major": "1",
-    "Minor": "0",
-    "Patch": "45"
+    "Minor": "2",
+    "Patch": "0"
   },
   "minimumAgentVersion": "2.104.1",
   "instanceNameFormat": "Publish Html Report",
@@ -25,14 +25,6 @@
       "defaultValue": "HTML Report",
       "required": false,
       "helpMarkDown": "Name of the displayed tab"
-    },
-    {
-      "name": "reportDir",
-      "type": "filePath",
-      "label": "HTML file Directory",
-      "defaultValue": "",
-      "required": true,
-      "helpMarkDown": "HTML file directory where PublishHtmlReport is run."
     },
     {
       "name": "artifactName",

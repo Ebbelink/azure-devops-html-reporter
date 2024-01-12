@@ -1,7 +1,25 @@
 @import "node_modules/azure-devops-ui/Core/_platformCommon.scss";
 
+html,
+body {
+  background-color: transparent;
+  margin: 0;
+  padding: 0;
+}
+
 .bolt-tabbar-tabs {
-    font-size: $fontSizeM;
-    margin-bottom: 10px;
-    font-family: Arial, sans-serif;
-  }
+  font-size: $fontSizeM;
+  margin-bottom: 10px;
+  font-family: Arial, sans-serif;
+}
+
+.full-fill{
+  height: calc(100vh - 60px);
+  width: 100%;
+}
+
+.page-container {
+  border: 1px solid #ddd;
+  box-shadow: 0 2px 6px 2px rgba(0, 0, 0, 0.05);
+  padding: 1.5rem;
+}
