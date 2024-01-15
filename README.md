@@ -5,8 +5,11 @@ Extension that provides allows users to publish a HTML report and view it in bui
 Use the `Publish HTML Report` task to publish the HTML report. This ensures that the tab to view it shows up in the pipeline
 
 ### Parameters
-`reportDir` | required | Path to report directory
-`tabName` | optional | Displayname of the tab in the pipeline
+param | required? | description
+---|---|---
+`tabName` | required | Displayname of the tab in the pipeline
+`artifactName` | required | The name of the artifact to render a HTML report from
+`htmlEntrypoint` | required | Path to html file
 
 ## YAML setup
 ```YAML
@@ -14,7 +17,9 @@ steps:
   - task: PublishHtmlReport@1
     displayName: 'Publish HTML Report'
     inputs:
-      reportDir: '$(Build.StagingDirectory)/html-report.html'
+      tabName: 'I am a tab name'
+      artifactName: 'html-report-artifact'
+      htmlEntrypoint: '/report/index.html'
 ```
 
 ### Building the task

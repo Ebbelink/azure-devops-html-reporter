@@ -17,7 +17,7 @@ const uuid_1 = require("uuid");
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            let input = new runConfig_1.RunConfig(tl.getInput("tabName", true), tl.getInput("reportDir", true), tl.getInput("artifactName", true), tl.getInput("htmlEntrypoint", true));
+            let input = new runConfig_1.RunConfig(tl.getInput("tabName", true), tl.getInput("artifactName", true), tl.getInput("htmlEntrypoint", true));
             console.log("input: ", input);
             let uuid = (0, uuid_1.v4)();
             let filePath = (0, path_1.resolve)(`${uuid}.json`);

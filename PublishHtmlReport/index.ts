@@ -9,7 +9,6 @@ async function run() {
   try {
     let input = new RunConfig(
       tl.getInput("tabName", true),
-      tl.getInput("reportDir", true),
       tl.getInput("artifactName", true),
       tl.getInput("htmlEntrypoint", true));
 
