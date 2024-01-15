@@ -13,9 +13,10 @@ body {
   font-family: Arial, sans-serif;
 }
 
-.full-fill{
+.full-fill {
   height: calc(100vh - 60px);
-  width: 100%;
+  width: calc(100% - 1px);
+  border: 1px solid rgba(0, 0, 0, 0.45); 
 }
 
 .page-container {
