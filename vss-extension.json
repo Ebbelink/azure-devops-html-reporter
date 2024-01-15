@@ -2,10 +2,10 @@
   "manifestVersion": 1,
   "id": "azure-pipelines-html-artifact-integration",
   "publisher": "StarttoScaleIT",
-  "version": "1.0.8",
+  "version": "1.0.10",
   "author": "Mr Ebbelink",
-  "name": "Html Integration",
-  "description": "Embed HTML report from an artifact in Azure Pipelines",
+  "name": "Report HTML from artifact",
+  "description": "Embed a HTML report in a build pipeline (summary) from an artifact in Azure Pipelines",
   "public": false,
   "categories": [
     "Azure Pipelines"
